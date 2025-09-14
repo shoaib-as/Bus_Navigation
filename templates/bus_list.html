@@ -1,0 +1,8 @@
+<h2>Bus List</h2>
+<ul>
+  {% for bus in buses %}
+    <li>{{ bus.bus_number }} - {{ bus.route_name }}</li>
+  {% empty %}
+    <li>No buses found</li>
+  {% endfor %}
+</ul>

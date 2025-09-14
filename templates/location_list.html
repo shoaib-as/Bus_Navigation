@@ -1,0 +1,8 @@
+<h2>Live Locations</h2>
+<ul>
+  {% for loc in locations %}
+    <li>{{ loc.bus.bus_number }} → ({{ loc.latitude }}, {{ loc.longitude }}) at {{ loc.timestamp }}</li>
+  {% empty %}
+    <li>No live locations yet</li>
+  {% endfor %}
+</ul>

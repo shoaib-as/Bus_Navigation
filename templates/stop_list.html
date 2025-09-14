@@ -1,0 +1,9 @@
+<h2>Stops</h2>
+<ul>
+  {% for stop in stops %}
+    <li>{{ stop.name }} ({{ stop.latitude }}, {{ stop.longitude }})</li>
+  {% empty %}
+    <li>No stops found</li>
+  {% endfor %}
+</ul>
+
