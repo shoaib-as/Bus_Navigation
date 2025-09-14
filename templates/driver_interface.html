@@ -1,0 +1,26 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Driver Interface</title>
+    <link rel="stylesheet" href="{% static 'css/driver.css' %}">
+    <script src="{% static 'js/driver.js' %}"></script>
+</head>
+
+<body>
+    <h1>Driver Interface</h1>
+
+    <select id="bus">
+        {% for bus in buses %}
+        <option value="{{ bus.id }}">ID: {{ bus.id }} - Route: {{ bus.route_name }}</option>
+        {% endfor %}
+    </select>
+
+    <button id="trackButton" onclick="toggleTracking()">Start Tracking</button>
+
+
+</body>
+
+</html>

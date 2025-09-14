@@ -1,9 +1,48 @@
+{% load static %}
+
 <!doctype html>
 <html>
+<head>
+  <title>Bus Tracker Map</title>
+  <link rel="stylesheet" type="text/css" href="{% static 'css/bus_map.css' %}">
+</head>
+<body>
+  <div id="map"></div>
+
+  <script src="{% static 'js/map.js' %}"></script>
+  <script>
+    const buses = {{ buses|safe }};  // Pass bus data from Django
+    initMap(buses);
+  </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- <!doctype html>
+<html>
   <head>
-    <title>Bus Tracker Map</title>
+    <title>Bus Tracker Map</title> -->
     <!-- Google Maps JS API -->
-    <script>
+    <!-- <script>
       (g => {
         var h, a, k, p = "The Google Maps JavaScript API", c = "google", l = "importLibrary", q = "__ib__", m = document, b = window;
         b = b[c] || (b[c] = {});
@@ -72,4 +111,5 @@
   <body>
     <div id="map"></div>
   </body>
-</html>
+</html> -->
+

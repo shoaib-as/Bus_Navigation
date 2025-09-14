@@ -1,0 +1,82 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-COMPATIBLE" content="IE-edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="{% static 'css/sign-up.css' %}">
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+</head>
+<body>
+    
+    <div class="container {% if register_active %}active{% endif %}">
+        <div class="form-box login">
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="login">
+                <h1>Login</h1>
+                {% if login_errors %}
+                    <p style="color:red">{{ login_errors }}</p>
+                {% endif %}
+                <div class="input-box">
+                    <input type="email" name="email" placeholder="Email" required>
+                    <i class='bx bx-user'></i> 
+                </div>
+                <div class="input-box">
+                    <input type="password" name="password" placeholder="Password" required>
+                    <i class='bx bx-lock'></i> 
+                </div>
+                <button type="submit" class="btn">Login</button>
+                 <input type="hidden" name="action" value="login"> 
+            </form>
+        </div>
+
+
+        <div class="form-box register">
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="register">
+                <h1>Registration</h1>
+                {% if register_errors %}
+                    <p style="color:red">{{ register_errors }}</p>
+                {% endif %}
+                <div class="input-box">
+                    <input type="text" name="username" placeholder="Username" required>
+                    <i class='bx bx-user'></i> 
+                </div>
+                <div class="input-box">
+                    <input type="email" name="email" placeholder="Email" required>
+                    <i class='bx bx-envelope'></i> 
+                </div>
+                <div class="input-box">
+                    <input type="password" name="password1" placeholder="Password" required>
+                    <i class='bx bx-lock'></i> 
+                </div>
+                <div class="input-box">
+                    <input type="password" name="password2" placeholder="Confirm Password" required>
+                    <i class='bx bx-lock'></i> 
+                </div>
+                <button type="submit" class="btn">Register</button>
+                 <input type="hidden" name="action" value="register"> 
+            </form>
+        </div>
+
+        <div class="toggle-box">
+            <div class="toggle-panel toggle-left">
+                <h1>Hello, Welcome</h1>
+                <p>Don't have an account?</p>
+                <button class="btn register-btn">Register</button>
+            </div>
+            <div class="toggle-panel toggle-right">
+                <h1>Welcome Back!</h1>
+                <p>Already have an account?</p>
+                <button class="btn login-btn">Login</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{% static 'js/script.js' %}"></script>
+</body>
+</html>
