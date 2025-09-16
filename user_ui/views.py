@@ -16,6 +16,8 @@ from rest_framework.decorators import api_view
 from django.utils.decorators import method_decorator
 from django.http import JsonResponse
 from ml_model.baseline_eta import estimate_eta
+from django.shortcuts import get_object_or_404
+from .models import Bus, ETARecord
 
 
 def home(request):
@@ -154,7 +156,6 @@ def predict_eta(request):
     return JsonResponse({"predicted_eta_minutes": round(prediction, 2)})
 
 from .ml_pipeline import train_model
-from .models import ETARecord
 
 def predict_eta(request):
     model, df = train_model()
@@ -168,3 +169,17 @@ def predict_eta(request):
     ETARecord.objects.create(bus_id=bus_id, predicted_eta=prediction)
 
     return JsonResponse({"predicted_eta_minutes": round(prediction, 2)})
+
+
+def latest_eta(request, bus_number):
+    bus = get_object_or_404(Bus, bus_number=bus_number)
+    try:
+        latest_record = ETARecord.objects.filter(bus=bus).latest("timestamp")
+        return JsonResponse({
+            "bus_number": bus.bus_number,
+            "route": bus.route_name,
+            "predicted_eta_minutes": round(latest_record.predicted_eta, 2),
+            "timestamp": latest_record.timestamp
+        })
+    except ETARecord.DoesNotExist:
+        return JsonResponse({"error": "No ETA available yet"})
