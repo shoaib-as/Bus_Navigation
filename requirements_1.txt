@@ -1,0 +1,21 @@
+# Core
+numpy
+pandas
+scikit-learn
+
+# Machine Learning
+xgboost
+lightgbm
+river   # for online/continuous learning
+
+# Geospatial
+geopy   # for distance calculations
+
+# API (optional, for serving predictions)
+flask
+fastapi
+uvicorn
+
+# Utilities
+requests   # to fetch weather data via APIs
+sqlalchemy # for database connections (Postgres, MySQL, SQLite)

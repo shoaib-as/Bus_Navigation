@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from .views import get_eta
 
 urlpatterns = [
     # HTML views
@@ -14,4 +15,6 @@ urlpatterns = [
     # API views
     path('api/update-location/', views.UpdateLocation.as_view(), name='update_location'),
     path('api/location/<int:bus_id>/', views.get_location, name='get_location'),
+
+    path("eta/<int:bus_id>/<int:stop_id>/", get_eta, name="bus_eta"),
 ]

@@ -49,3 +49,11 @@ class DriverProfile(models.Model):
 
     def __str__(self):
         return self.user.username
+    
+class ArrivalLog(models.Model):
+    bus = models.ForeignKey(Bus, on_delete=models.CASCADE)
+    stop = models.ForeignKey(Stop, on_delete=models.CASCADE)
+    arrival_time = models.DateTimeField()
+
+    def __str__(self):
+        return f"{self.bus.bus_number} arrived at {self.stop.name} @ {self.arrival_time}"

@@ -14,6 +14,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from django.utils.decorators import method_decorator
+from django.http import JsonResponse
+from ml_model.baseline_eta import estimate_eta
 
 
 def home(request):
@@ -133,3 +135,8 @@ class UpdateLocation(APIView):
             timestamp=timezone.now()
         )
         return Response({"status": "success"})
+
+
+def get_eta(request, bus_id, stop_id):
+    eta = estimate_eta(bus_id, stop_id)
+    return JsonResponse({"bus_id": bus_id, "stop_id": stop_id, "eta_minutes": eta})
