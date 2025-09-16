@@ -152,3 +152,19 @@ def predict_eta(request):
     prediction = model.predict(latest)[0]
 
     return JsonResponse({"predicted_eta_minutes": round(prediction, 2)})
+
+from .ml_pipeline import train_model
+from .models import ETARecord
+
+def predict_eta(request):
+    model, df = train_model()
+    if model is None:
+        return JsonResponse({"error": "Not enough data yet"})
+
+    latest = df.iloc[-1][["latitude", "longitude", "speed", "hour", "minute"]].values.reshape(1, -1)
+    prediction = model.predict(latest)[0]
+
+    bus_id = int(df.iloc[-1]["bus_id"])
+    ETARecord.objects.create(bus_id=bus_id, predicted_eta=prediction)
+
+    return JsonResponse({"predicted_eta_minutes": round(prediction, 2)})

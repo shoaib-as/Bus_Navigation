@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Location, Bus, Stop  # adjust imports to match your models
+from .models import Location, Bus, Stop 
 
 class LocationSerializer(serializers.ModelSerializer):
     class Meta:

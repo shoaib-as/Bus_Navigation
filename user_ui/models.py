@@ -57,3 +57,12 @@ class ArrivalLog(models.Model):
 
     def __str__(self):
         return f"{self.bus.bus_number} arrived at {self.stop.name} @ {self.arrival_time}"
+
+class ETARecord(models.Model):
+    bus = models.ForeignKey(Bus, on_delete=models.CASCADE)
+    predicted_eta = models.FloatField(help_text="ETA in minutes")
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.bus.bus_number} ETA: {self.predicted_eta:.2f} min"
+
