@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     
     #customapps
     'user_ui',
+    "ml_model",
 
 ]
 
