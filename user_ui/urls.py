@@ -1,6 +1,6 @@
 from django.urls import path
 from . import views
-from .views import get_eta
+from .views import get_eta , predict_eta
 
 urlpatterns = [
     # HTML views
@@ -17,4 +17,5 @@ urlpatterns = [
     path('api/location/<int:bus_id>/', views.get_location, name='get_location'),
 
     path("eta/<int:bus_id>/<int:stop_id>/", get_eta, name="bus_eta"),
+    path("predict-eta/", predict_eta, name="predict_eta"),
 ]

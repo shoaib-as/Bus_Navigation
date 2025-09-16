@@ -140,3 +140,15 @@ class UpdateLocation(APIView):
 def get_eta(request, bus_id, stop_id):
     eta = estimate_eta(bus_id, stop_id)
     return JsonResponse({"bus_id": bus_id, "stop_id": stop_id, "eta_minutes": eta})
+
+from .ml_pipeline import train_model
+
+def predict_eta(request):
+    model, df = train_model()
+    if model is None:
+        return JsonResponse({"error": "Not enough data yet"})
+
+    latest = df.iloc[-1][["latitude", "longitude", "speed", "hour", "minute"]].values.reshape(1, -1)
+    prediction = model.predict(latest)[0]
+
+    return JsonResponse({"predicted_eta_minutes": round(prediction, 2)})
