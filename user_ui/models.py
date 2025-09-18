@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.utils import timezone
 
 class User(AbstractUser):
     email = models.EmailField(unique=True)
@@ -54,9 +55,15 @@ class ArrivalLog(models.Model):
     bus = models.ForeignKey(Bus, on_delete=models.CASCADE)
     stop = models.ForeignKey(Stop, on_delete=models.CASCADE)
     arrival_time = models.DateTimeField()
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["bus", "stop", "arrival_time"]),
+        ]
 
     def __str__(self):
-        return f"{self.bus.bus_number} arrived at {self.stop.name} @ {self.arrival_time}"
+        return f"{self.bus.bus_number} @ {self.stop.name} -> {self.arrival_time}"
 
 class ETARecord(models.Model):
     bus = models.ForeignKey(Bus, on_delete=models.CASCADE)
@@ -66,3 +73,17 @@ class ETARecord(models.Model):
     def __str__(self):
         return f"{self.bus.bus_number} ETA: {self.predicted_eta:.2f} min"
 
+class WeatherSnapshot(models.Model):
+    timestamp = models.DateTimeField()
+    lat = models.FloatField()
+    lon = models.FloatField()
+    temp_c = models.FloatField(null=True, blank=True)
+    precipitation = models.FloatField(null=True, blank=True)
+    wind_speed = models.FloatField(null=True, blank=True)
+    weather_code = models.CharField(max_length=64, blank=True)
+
+class TrafficSnapshot(models.Model):
+    timestamp = models.DateTimeField()
+    lat = models.FloatField()
+    lon = models.FloatField()
+    traffic_level = models.FloatField(null=True, blank=True)

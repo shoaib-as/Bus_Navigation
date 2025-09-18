@@ -1,25 +1,25 @@
-from django.shortcuts import render
-from .models import Bus, Stop, LiveLocation
-from django.core.serializers import serialize
-import json
-from django.shortcuts import redirect, get_object_or_404
-from django.contrib.auth import authenticate, login, logout
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth import authenticate, login
 from django.contrib.auth.hashers import make_password
 from django.contrib import messages
-from .models import User
 from django.utils import timezone
 from django.core.mail import send_mail
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.permissions import AllowAny
 from rest_framework.decorators import api_view
-from django.utils.decorators import method_decorator
 from django.http import JsonResponse
-from ml_model.baseline_eta import estimate_eta
-from django.shortcuts import get_object_or_404
-from .models import Bus, ETARecord
+from django.utils.decorators import method_decorator
+from .models import Bus, Stop, LiveLocation, User, ETARecord
+from .ml_pipeline import predict_eta as ml_predict_eta, train_model
+from .utils import get_address_from_coordinates
+from django.conf import settings
+import requests
 
-
+# ----------------------------
+# Standard views
+# ----------------------------
 def home(request):
     return render(request, 'home.html')
 
@@ -36,31 +36,64 @@ def location_list(request):
     return render(request, 'location_list.html', {'locations': locations})
 
 def bus_map(request):
-    buses = Bus.objects.all()
-    buses_json = json.dumps([
-        {"bus_number": bus.bus_number, "latitude": bus.latitude, "longitude": bus.longitude} 
-        for bus in buses
-    ])
-    return render(request, 'bus_map.html', {'buses': buses_json})
+    locations = LiveLocation.objects.select_related("bus").order_by("-timestamp")[:10]
 
+    location_data = []
+    for loc in locations:
+        url = f"https://api.tomtom.com/search/2/reverseGeocode/{loc.latitude},{loc.longitude}.json?key={settings.TOMTOM_API_KEY}"
+        response = requests.get(url).json()
+        address = response.get("addresses", [{}])[0].get("address", {}).get("freeformAddress", "Unknown")
+        location_data.append({
+            "bus": loc.bus.bus_number,
+            "latitude": loc.latitude,
+            "longitude": loc.longitude,
+            "address": address,
+        })
+
+    return render(request, "bus_map.html", {
+        "locations": location_data,
+        "buses": location_data,
+    })
+
+def user_dashboard(request):
+    locations = LiveLocation.objects.all()
+    location_data = []
+
+    for loc in locations:
+        address = get_address_from_coordinates(loc.latitude, loc.longitude)
+        location_data.append({
+            "id": loc.id,
+            "bus": loc.bus.name,
+            "latitude": loc.latitude,
+            "longitude": loc.longitude,
+            "address": address,
+        })
+
+    return render(request, "user_ui/dashboard.html", {"locations": location_data})
+
+def driver_interface(request):
+    buses = Bus.objects.all()
+    return render(request, 'driver_interface.html', {'buses': buses})
+
+
+# ----------------------------
+# Auth / Registration
+# ----------------------------
 @csrf_exempt
 def auth_view(request):
     context = {"register_active": False}
 
     if request.method == "POST":
         action = request.POST.get("action")
-
         if action == "login":
             email = request.POST.get("email")
             password = request.POST.get("password")
             user = authenticate(request, email=email, password=password)
-
-            if user is not None:
+            if user:
                 login(request, user)
                 messages.success(request, "Login successful!")
                 return redirect("home")
-            else:
-                context["login_errors"] = "Invalid email or password."
+            context["login_errors"] = "Invalid email or password."
 
         elif action == "register":
             context["register_active"] = True
@@ -81,8 +114,8 @@ def auth_view(request):
                 try:
                     send_mail(
                         subject="Welcome to EventHub!",
-                        message=f"Hi {user.username},\n\nThank you for registering at EventHub. Start exploring exciting events now!",
-                        from_email=None,  # Uses DEFAULT_FROM_EMAIL
+                        message=f"Hi {user.username},\n\nThank you for registering at EventHub.",
+                        from_email=None,
                         recipient_list=[user.email],
                         fail_silently=False,
                     )
@@ -93,27 +126,11 @@ def auth_view(request):
     return render(request, "sign-up.html", context)
 
 
-@api_view(['GET'])
-def get_location(request, bus_id):
-    location = LiveLocation.objects.filter(bus_id=bus_id).last()
-    return Response({
-        "latitude": location.latitude,
-        "longitude": location.longitude,
-        "timestamp": location.timestamp
-    })
-
-
-def driver_interface(request):
-    buses = Bus.objects.all()
-    return render(request, 'driver_interface.html', {'buses': buses})
-
-
-from rest_framework.authentication import BasicAuthentication
-from rest_framework.permissions import AllowAny
-
+# ----------------------------
+# API: Update bus location
+# ----------------------------
 @method_decorator(csrf_exempt, name='dispatch')
 class UpdateLocation(APIView):
-    authentication_classes = []  # disables SessionAuthentication (no CSRF enforcement)
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -125,61 +142,66 @@ class UpdateLocation(APIView):
         if not all([bus_id, lat, lng]):
             return Response({"status": "error", "message": "Missing data"}, status=400)
 
-        try:
-            bus = Bus.objects.get(id=bus_id)
-        except Bus.DoesNotExist:
-            return Response({"status": "error", "message": "Bus not found"}, status=404)
-
+        bus = get_object_or_404(Bus, id=bus_id)
         LiveLocation.objects.create(
             bus=bus,
             latitude=lat,
             longitude=lng,
             timestamp=timezone.now()
         )
+
         return Response({"status": "success"})
 
 
-def get_eta(request, bus_id, stop_id):
-    eta = estimate_eta(bus_id, stop_id)
-    return JsonResponse({"bus_id": bus_id, "stop_id": stop_id, "eta_minutes": eta})
-
-from .ml_pipeline import train_model
-
-def predict_eta(request):
-    model, df = train_model()
-    if model is None:
-        return JsonResponse({"error": "Not enough data yet"})
-
-    latest = df.iloc[-1][["latitude", "longitude", "speed", "hour", "minute"]].values.reshape(1, -1)
-    prediction = model.predict(latest)[0]
-
-    return JsonResponse({"predicted_eta_minutes": round(prediction, 2)})
-
-from .ml_pipeline import train_model
-
-def predict_eta(request):
-    model, df = train_model()
-    if model is None:
-        return JsonResponse({"error": "Not enough data yet"})
-
-    latest = df.iloc[-1][["latitude", "longitude", "speed", "hour", "minute"]].values.reshape(1, -1)
-    prediction = model.predict(latest)[0]
-
-    bus_id = int(df.iloc[-1]["bus_id"])
-    ETARecord.objects.create(bus_id=bus_id, predicted_eta=prediction)
-
-    return JsonResponse({"predicted_eta_minutes": round(prediction, 2)})
+@api_view(['GET'])
+def get_location(request, bus_id):
+    location = LiveLocation.objects.filter(bus_id=bus_id).last()
+    if location:
+        return Response({
+            "latitude": location.latitude,
+            "longitude": location.longitude,
+            "timestamp": location.timestamp
+        })
+    return Response({"error": "No location found"}, status=404)
 
 
+# ----------------------------
+# ETA Prediction APIs
+# ----------------------------
+@api_view(['GET'])
+def predict_latest_eta(request, bus_id, stop_lat, stop_lon):
+    """Train model automatically and predict ETA for latest bus location."""
+    model, df = train_model(stop_lat=float(stop_lat), stop_lon=float(stop_lon))
+    if model is None or df.empty:
+        return JsonResponse({"error": "Not enough data yet for this route"}, status=400)
+
+    latest_loc = df[df['bus_id'] == int(bus_id)].iloc[-1]
+    latest_features = latest_loc.drop(labels=['bus_id', 'timestamp', 'eta']).values.reshape(1, -1)
+
+    predicted = model.predict(latest_features)[0]
+
+    ETARecord.objects.create(
+        bus_id=int(bus_id),
+        predicted_eta=predicted,
+        timestamp=timezone.now()
+    )
+
+    return JsonResponse({
+        "bus_id": bus_id,
+        "predicted_eta_minutes": round(predicted, 2),
+        "timestamp": timezone.now()
+    })
+
+
+@api_view(['GET'])
 def latest_eta(request, bus_number):
     bus = get_object_or_404(Bus, bus_number=bus_number)
     try:
         latest_record = ETARecord.objects.filter(bus=bus).latest("timestamp")
         return JsonResponse({
             "bus_number": bus.bus_number,
-            "route": bus.route_name,
             "predicted_eta_minutes": round(latest_record.predicted_eta, 2),
             "timestamp": latest_record.timestamp
         })
     except ETARecord.DoesNotExist:
-        return JsonResponse({"error": "No ETA available yet"})
+        return JsonResponse({"error": "No ETA available yet"}, status=404)
