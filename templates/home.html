@@ -14,20 +14,21 @@
 <head>
   <meta charset="UTF-8">
   <title>Bus Tracking System</title>
-  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <link rel="stylesheet" href="{% static 'css/home.css' %}">
 </head>
 <body>
-  <h1>Welcome to Bus Tracking System</h1>
-
-  <ul>
-    <li><a href="{% url 'bus_list' %}">All Buses</a></li>
-    <li><a href="{% url 'stop_list' %}">All Stops</a></li>
-    <li><a href="{% url 'location_list' %}">Live Locations</a></li>
-    <li><a href="{% url 'bus_map' %}">Bus Map</a></li>
-  </ul>
-
+  
+<div class="nav"> 
+    <a href="{% url 'sign-up' %}">SignUp</a>
+    <a href="{% url 'Role' %}">Roles</a>
+    <a href="{% url 'bus_list' %}">All Buses</a>
+    <a href="{% url 'stop_list' %}">All Stops</a>
+    <a href="{% url 'location_list' %}">Live Locations</a>
+    <a href="{% url 'bus_map' %}">Bus Map</a>
+ </div>
+ <h1 class="msg">Welcome to Bus Tracking System!</h1>
   <!-- Button for bus driver interface -->
-  <button onclick="window.location.href='{% url 'driver_interface' %}'">
+  <button onclick="window.location.href='{% url "driver_interface" %}'">
     Driver Interface
   </button>
 </body>
