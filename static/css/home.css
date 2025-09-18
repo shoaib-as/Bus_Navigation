@@ -1,6 +1,7 @@
 body {
   font-family: Arial, sans-serif;
   margin: 20px;
+  background: linear-gradient(90deg, #e2e2e2, #c9d6ff);
 }
 
 #map {
@@ -8,4 +9,25 @@ body {
   margin-top: 20px;
   border: 2px solid #333;
   border-radius: 8px;
+}
+.nav{
+    background-color:white;
+    height: 40px;
+    width: 98%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-left:12px;
+    padding-right:12px;
+    border-radius: 30px;
+}
+a{
+text-decoration: none;
+}
+.msg
+{
+    display: flex;
+    justify-content:center;
+    padding-top: 50px;
+    font-size: 70px;
 }
